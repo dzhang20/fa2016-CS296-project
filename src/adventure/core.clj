@@ -141,7 +141,13 @@
             (println (str "Here is the puzzle: " puz "."))
             player))))
 
-
+(defn hit [object player]
+  (let [location (player :location)]
+    (if (= location :balcony)
+      (do (println "Your attack pass through the ghost without any damage but irritate the ghost.")
+        (update-in player [:health] - 20))
+      (do (println "You hit on the ground and hurt yourself")
+        (update-in player [:health] - 20)))))
 
 (defn eat [object player]
   (let [inven (player :inventory)]

@@ -78,8 +78,8 @@
                      :title "in the mystery room"
                      :dir {:south :corridor2}
                      :puzzle [
-                               {:question ""
-                                :answer ""
+                               {:question "There are 10 people died in this room and you will be the next if you answered wrong. So how many people died in this room?"
+                                :answer "2"
                                 }]
                      :contents #{:magic-ring}}
    })
@@ -109,35 +109,82 @@
           player)
       (assoc-in player [:location] dest))))
 
-(defn get [item player]
+(defn get [object player]
   (let [location (player :location)
-        content (->> the-map location :contents content)]
-    (if (nil? content (location :contents))
+        content (->> the-map location :contents object)]
+    (if (nil? content)
       (do (println "You can't do that.")
         player)
       (do (assoc-in player [:inventory] content)
           (str "You got " content "." )))))
 
 (defn time [player]
-  (let [time (player :tick)]
-  (do (println time)))
+  (let
+    [time (player :tick)]
+  (do
+    (println time)))
 
-(defn ask [Someone player]
-  )
+(defn ask [player]
+  (let [location (player :location)]
+    (if (= location :balcony)
+      (do
+        (println "Hello, my name is Alice. I lost my favorite toy. If you could help me find my toy, I will tell you how to leave here") player))))
 
-(defn solve [puzzle player])
+(defn solve [player]
+  (let [location (get-in player [:location])
+        puz (get-in the-map [location :puzzle])]
+        (if (nil? puz)
+          (do
+            (println "There is nothing for you to solve. Please go away")
+            player)
+          (do
+            (println (str "Here is the puzzle: " puz "."))
+            player))))
 
-(defn eat [object player])
 
-(defn use [object player])
 
-(defn drop [object player])
+(defn eat [object player]
+  (let [inven (player :inventory)]
+    (if (= object "apple")
+      (+ player [:health] 30)
+      (do (println "An apple a day, make the doctor away")
+        player))
+    (if (= object "raw-meat")
+      (- player [:health] 50)
+      (do (println "Better than nothing")
+        player))
+    (if (= object "frog")
+      (- player [:health] 90)
+      (do (println "The frog is poisonous. Dying....")
+        player))
+    (do (println "You can't eat that")
+      player)))
+
+(defn use [object player]
+  (let [inven (player :inventory)
+        location (player :location)
+        content (->> the-map inven object)]
+    (if (= location :room-of-unknown)
+      (if (inven (name object))
+        (case (name object)
+          "key" (do (println "You found and opened the mystery box and a magic ring shining in the air.")
+                  player)
+          "hammar" (do (println "You smash the box and hurt yourself, but found nothing")
+                     (update-in player [:health] - 20))
+          "knife" (do (println "You careless cut yourself. You are bleeding to death")
+                    (update-in player [:health] - 80))
+    )
+
+(defn drop [object player]
+  (let [inven (player :inventory)]
+    (if (nil? object)
+      (do (println "You can't do that") player))
+    (do (remove inven object)(println (str "You just dropped" object ".")))))
 
 (defn diagnose [player]
   (let [blood (player :health)]
     (if (< blood 30)
-      (do (println "You are close to death")
-        player)
+      (do (println "You are close to death") player)
       (do (println "You are in good health") player))))
 
 
@@ -153,11 +200,11 @@
          (:or [:e] [:east] ) (go :east player)
          [:hit] (hit :object player)
          [:get] (get :object player)
-         (:or [:drink] [:eat]) (eat :object player)
-         [:ask] (ask :Someone player)
+         [:eat] (eat :object player)
+         [:ask] (ask player)
          [:use] (use :object player)
          [:drop] (drop :object player)
-         [:solve] (solve :puzzle player)
+         [:solve] (solve player)
          [:status] (status player)
          [:time] (time player)
          [:diagnose] (diagnose player)
